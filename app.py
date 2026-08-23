@@ -1,7 +1,6 @@
 # ==============================================================================
 # ⚡ SPT DESIGNER - app_hf.py MAESTRO (8 pestañas + despliegue Hugging Face)
 # ==============================================================================
-!pip install gradio matplotlib numpy scipy python-docx -q
 import gradio as gr, numpy as np, math, json, os, tempfile
 import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
 from docx import Document
