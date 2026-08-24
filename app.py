@@ -35,6 +35,8 @@ PARAMETROS={'I_falla':8000.0,'t_falla':0.3,'peso':50.0,'rho_grava':3000.0,'h_gra
  'long_jabalina':2.4,'radio_conductor':0.0053,'k_material':202.8,'material_conductor':'Cobre blando','calibre':'2/0 AWG'}
 MATERIALES={'Grava húmeda':{'rho_s':3000,'hs':0.10,'fuente':'IEEE 80-2013','nota':'Estándar.'},
  'Grava seca':{'rho_s':10000,'hs':0.10,'fuente':'IEEE 80-2013','nota':'Seco.'},
+ 'Concreto seco':{'rho_s':2000,'hs':0.10,'fuente':'Referencial','nota':'Loseta seca.'},
+ 'Concreto húmedo':{'rho_s':150,'hs':0.10,'fuente':'Referencial','nota':'Loseta saturada (Cs bajo).'},
  'Suelo con pasto':{'rho_s':None,'hs':0.0,'fuente':'Campo','nota':'Sin capa.'},
  'Tapete dieléctrico':{'rho_s':1000000,'hs':0.01,'fuente':'ASTM F605','nota':'Puntos de operación.'}}
 MATCOND={'Cobre blando':{'k':202.8},'Cobre duro':{'k':197.0},'Copperweld':{'k':125.0}}
@@ -202,7 +204,7 @@ def agregar_direccion(dsel, txt):
                 if a>0 and rho>0: add.append((a,rho,dsel))
             except Exception: continue
     estado['suelo_rows']+=add
-    return [[f"{x[0]:g}",f"{x[1]:g}",x[2]] for x in estado['suelo_rows']], f"➕ {len(add)} filas de **{dsel}** · total {len(estado['suelo_rows'])}"
+    return [[f"{x[0]:g}",f"{x[1]:g}",x[2]] for x in estado['suelo_rows']], f"➕ {len(add)} filas de **{dsel}** · total {len(estado['suelo_rows'])}", ""
 def limpiar_conjunto():
     estado['suelo_rows']=[]; return [], "🧹 Conjunto vacío"
 
@@ -562,7 +564,7 @@ with gr.Blocks(theme=gr.themes.Soft(),title="SPT Designer") as app:
             b_prec=gr.Button("🔬 Calcular preciso",variant="primary"); prec_out=gr.Markdown()
 
     b_datos.click(aplicar_datos,inputs=[p_nom,p_cli,p_ubi,p_ing,q_I,q_t,q_peso,q_pm,q_lj,q_mc,q_cal],outputs=datos_out)
-    b_add.click(agregar_direccion,inputs=[dir_sel,df_dir],outputs=[df_all,dir_msg])
+    b_add.click(agregar_direccion,inputs=[dir_sel,df_dir],outputs=[df_all,dir_msg,df_dir])
     b_clr.click(limpiar_conjunto,outputs=[df_all,dir_msg])
     b_suelo.click(lambda: _analizar_rows(estado['suelo_rows']),outputs=[suelo_out,suelo_tbl,suelo_plot])
     b_usars.click(aplicar_suelo_medido,outputs=[suelo_out,guia])
