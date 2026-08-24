@@ -174,6 +174,17 @@ def detectar_anomalias(rows):
         dev=(m-ov)/ov*100 if ov>0 else 0
         if abs(dev)>25: alerts.append({'tipo':'anisotropia','dir':d,'a':None,'rho':m,'desvio':dev})
     return alerts
+def explicar_alertas(alerts):
+    if not alerts: return "**Control de calidad:** mediciones consistentes, sin valores atípicos."
+    L=["**Control de calidad de mediciones:**"]
+    for a in alerts:
+        if a['tipo']=='error_medida':
+            L.append(f"⚠️ Posible **error de medición** en {a['dir']}, a={a['a']} m (ρ={a['rho']:.0f} Ω·m, desvío {a['desvio']:+.0f}%). Verifique/repita ese punto.")
+        elif a['tipo']=='hallazgo':
+            L.append(f"🔍 **Hallazgo real** en {a['dir']} (desvío {a['desvio']:+.0f}%): estratificación/anisotropía lateral; considérelo en el diseño.")
+        else:
+            L.append(f"🧭 **Anisotropía:** el promedio de {a['dir']} difiere {a['desvio']:+.0f}% del global; adopte el caso conservador.")
+    return "\n".join(L)
 def _analizar_rows(rows):
     try:
         if len(rows)<4: return "⚠️ Agrega ≥4 filas (elige dirección y carga a,ρ)",[],None
@@ -190,9 +201,11 @@ def _analizar_rows(rows):
         fig,ax=plt.subplots(figsize=(9,6))
         for d in sorted(set(r[2] for r in rows)):
             ax.scatter([A[i] for i in range(len(A)) if rows[i][2]==d],[R[i] for i in range(len(A)) if rows[i][2]==d],label=d,alpha=0.6)
-        ax.plot(amean,rmean,'ko-',lw=2); aa=np.logspace(np.log10(min(A)*0.8),np.log10(max(A)*1.2),60)
-        ax.plot(aa,wenner_2capas(aa,r1,r2,h),'r-'); ax.set_xscale('log'); ax.set_yscale('log'); ax.grid(alpha=0.3,which='both'); ax.legend(); plt.close(fig)
-        return f"**2 capas:** ρ1={r1:.1f}, ρ2={r2:.1f}, h={h:.2f} m · **Alertas:** {len(estado['alerts'])}. Pulsa **📌 Usar suelo medido**.",stats,fig
+        ax.plot(amean,rmean,'ko-',lw=2,label='Promedio medido')
+        aa=np.logspace(np.log10(min(A)*0.8),np.log10(max(A)*1.2),60)
+        ax.plot(aa,wenner_2capas(aa,r1,r2,h),'r-',lw=2,label='Modelo 2 capas (teórico)')
+        ax.set_xscale('log'); ax.set_yscale('log'); ax.grid(alpha=0.3,which='both'); ax.legend(); plt.close(fig)
+        return f"**2 capas:** ρ1={r1:.1f}, ρ2={r2:.1f}, h={h:.2f} m.\n\n"+explicar_alertas(estado['alerts'])+"\n\nPulsa **📌 Usar suelo medido**.",stats,fig
     except Exception as e: return f"❌ {e}",[],None
 def agregar_direccion(dsel, txt):
     add=[]
