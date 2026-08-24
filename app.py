@@ -1,5 +1,5 @@
 # ==============================================================================
-# ⚡ SPT DESIGNER - app_hf.py MAESTRO (8 pestañas + despliegue Hugging Face)
+# ⚡ SPT DESIGNER - app.py MAESTRO FINAL (8 pestañas, listo Render/GitHub)
 # ==============================================================================
 import gradio as gr, numpy as np, math, json, os, tempfile
 import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
@@ -192,12 +192,13 @@ def _analizar_rows(rows):
         ax.plot(aa,wenner_2capas(aa,r1,r2,h),'r-'); ax.set_xscale('log'); ax.set_yscale('log'); ax.grid(alpha=0.3,which='both'); ax.legend(); plt.close(fig)
         return f"**2 capas:** ρ1={r1:.1f}, ρ2={r2:.1f}, h={h:.2f} m · **Alertas:** {len(estado['alerts'])}. Pulsa **📌 Usar suelo medido**.",stats,fig
     except Exception as e: return f"❌ {e}",[],None
-def agregar_direccion(dsel, df):
+def agregar_direccion(dsel, txt):
     add=[]
-    if df is not None:
-        for r in df:
+    for l in (txt or "").split('\n'):
+        p=l.replace(',',' ').split()
+        if len(p)>=2:
             try:
-                a=float(r[0]); rho=float(r[1])
+                a=float(p[0]); rho=float(p[1])
                 if a>0 and rho>0: add.append((a,rho,dsel))
             except Exception: continue
     estado['suelo_rows']+=add
@@ -498,9 +499,9 @@ with gr.Blocks(theme=gr.themes.Soft(),title="SPT Designer") as app:
             gr.Markdown("*La capa protectora (grava) se define en 2 🌍 Suelo — fuente única.*")
             b_datos=gr.Button("💾 Guardar datos",variant="primary"); datos_out=gr.Markdown()
         with gr.Tab("2 🌍 Suelo"):
-            gr.Markdown("Elige la **dirección de la medición**, carga `a, ρ` y agrega al conjunto.")
+            gr.Markdown("Elige la **dirección de la medición** y pega tus pares `a rho` (uno por línea).")
             dir_sel=gr.Dropdown(DIRECCIONES,value='N-S',label="Dirección de la medición",info="Orientación del tendido Wenner")
-            df_dir=gr.Dataframe(headers=["Separación a (m)","Resistividad ρ (Ω·m)"],datatype="str",interactive=True,row_count=(3,"dynamic"))
+            df_dir=gr.Textbox(label="Pares 'a rho' por línea (m, Ω·m)",lines=5,placeholder="5 120\n10 90\n20 70\n40 55")
             with gr.Row(): b_add=gr.Button("➕ Agregar dirección"); b_clr=gr.Button("🧹 Limpiar")
             dir_msg=gr.Markdown(); df_all=gr.Dataframe(headers=["a (m)","ρ (Ω·m)","dirección"],label="Conjunto acumulado")
             with gr.Row():
@@ -598,7 +599,8 @@ with gr.Blocks(theme=gr.themes.Soft(),title="SPT Designer") as app:
             return f"<p>🔴 ERROR: {type(e).__name__}: {e}</p>","",None,f"```\n{tb[-600:]}\n```",stepper()
     b_calc.click(on_calc,inputs=[aI,aT],outputs=[dash,tabla_num,heat,recs,guia])
     b_perf.click(perfiles,inputs=[pI,pT,pcut,qx1,qy1,qx2,qy2],outputs=[perf_out,pf1,pf2,pf3])
-        def on_opt(I,t):
+    def on_opt(I,t):
+        if not estado['conductores']: return "⚠️ genera malla en 3 📐"
         xs=[c[0] for c in estado['conductores']]+[c[2] for c in estado['conductores']]
         ys=[c[1] for c in estado['conductores']]+[c[3] for c in estado['conductores']]
         return optimizar(max(xs)-min(xs),max(ys)-min(ys),I,t,SUELO['rho1'])
@@ -625,5 +627,5 @@ with gr.Blocks(theme=gr.themes.Soft(),title="SPT Designer") as app:
     b_imp.click(importar_proyecto,inputs=imp_file,outputs=[pers_out,json_out])
     ci,cj=crear_malla_rect(40,40,5); estado['conductores']=ci; estado['jabalinas']=cj
 
-# ---- arranque Hugging Face ----
+# ---- arranque (Render / Hugging Face / local) ----
 app.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", os.environ.get("GRADIO_SERVER_PORT","7860"))))
