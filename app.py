@@ -598,7 +598,11 @@ with gr.Blocks(theme=gr.themes.Soft(),title="SPT Designer") as app:
             return f"<p>🔴 ERROR: {type(e).__name__}: {e}</p>","",None,f"```\n{tb[-600:]}\n```",stepper()
     b_calc.click(on_calc,inputs=[aI,aT],outputs=[dash,tabla_num,heat,recs,guia])
     b_perf.click(perfiles,inputs=[pI,pT,pcut,qx1,qy1,qx2,qy2],outputs=[perf_out,pf1,pf2,pf3])
-    b_opt.click(optimizar,inputs=[oI,oT],outputs=opt_out)
+        def on_opt(I,t):
+        xs=[c[0] for c in estado['conductores']]+[c[2] for c in estado['conductores']]
+        ys=[c[1] for c in estado['conductores']]+[c[3] for c in estado['conductores']]
+        return optimizar(max(xs)-min(xs),max(ys)-min(ys),I,t,SUELO['rho1'])
+    b_opt.click(on_opt,inputs=[oI,oT],outputs=opt_out)
     def on_prec(XoR,ml,pts_txt):
         pts=[]
         for l in pts_txt.split('\n'):
